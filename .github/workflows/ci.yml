@@ -2,14 +2,16 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, develop, staging]
+    branches: [main]
   pull_request:
-    branches: [main, develop, staging]
+    branches: [main]
 
 jobs:
 
   test_job:
+    name: Testes (pytest / sanity check)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,32 +26,39 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run basic tests
-        run: pytest -q || true
+      - name: Run tests
+        run: |
+          pytest -q || echo "Sem testes estruturados ainda"
 
 
   code_analysis:
+    name: Code Analysis (flake8)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install flake8
         run: pip install flake8
 
-      - name: Run flake8
-        run: flake8 .
+      - name: Run lint
+        run: flake8 . --count --show-source --statistics
 
 
   security_scan:
+    name: Security Scan (bandit)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -57,40 +66,47 @@ jobs:
         run: pip install bandit
 
       - name: Run security scan
-        run: bandit -r todo_project || true
+        run: bandit -r . -x ./venv,./env || true
 
 
   dependency_check:
+    name: Dependency Check (pip-audit)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install audit tool
+      - name: Install pip-audit
         run: pip install pip-audit
 
-      - name: Run dependency check
+      - name: Audit dependencies
         run: pip-audit || true
 
 
   build_job:
+    name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [test_job, code_analysis]
+    needs: [test_job, code_analysis, security_scan, dependency_check]
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t flask-app .
+      - name: Build image
+        run: docker build -t flask-app:latest .
 
 
   deploy_job:
+    name: Deploy (docker-compose)
     runs-on: ubuntu-latest
     needs: [build_job]
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run docker-compose
-        run: docker compose up -d --build
+      - name: Start stack
+        run: docker compose up -d

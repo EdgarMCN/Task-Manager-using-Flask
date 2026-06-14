@@ -32,7 +32,7 @@ jobs:
 
       - name: Verificar sintaxe
         run: |
-          python -m py_compile app.py
+          python -m py_compile run.py
 
       - name: Teste básico
         run: |

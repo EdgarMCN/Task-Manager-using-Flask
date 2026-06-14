@@ -1,41 +1,39 @@
 name: Pipeline
 
 on:
-push:
-branches:
-- main
-- stage
-- develop
+  push:
+    branches:
+      - main
+      - staging
+      - develop
 
-pull_request:
-branches:
-- main
-- stage
+  pull_request:
+    branches:
+      - main
+      - staging
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
 
-build:
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
-runs-on: ubuntu-latest
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-steps:
+      - name: Instalar dependências
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-  - name: Checkout do código
-    uses: actions/checkout@v4
+      - name: Verificar sintaxe
+        run: |
+          python -m py_compile app.py
 
-  - name: Configurar Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.11'
-
-  - name: Instalar dependências
-    run: |
-      pip install -r requirements.txt
-
-  - name: Verificar sintaxe
-    run: |
-      python -m py_compile todo_project/run.py
-
-  - name: Testar carregamento da aplicação
-    run: |
-      python -c "print('Aplicação carregada com sucesso')"
+      - name: Teste básico
+        run: |
+          python -c "print('Aplicação carregada com sucesso')"

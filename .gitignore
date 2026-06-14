@@ -128,3 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 todo_project/todo_project/site.db
+
+
+# Docker observability
+grafana/
+prometheus/data/
+*.save
